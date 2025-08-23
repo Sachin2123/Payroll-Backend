@@ -497,10 +497,23 @@ app.post("/api/Exec-Procedure", async (req, res) => {
   const { MonthlyCTC } = req.body;
   try {
     const result = await sql.query`EXEC [CURSOR] ${MonthlyCTC}`;
-    console.log("result.recordset:- ", result.recordset);
+    // console.log("result.recordset:- ", result.recordset);
     res.json(result.recordset);
   } catch (err) {
     res.json("Error in executing employeedetails procedure");
+  }
+});
+
+// Fetch Monthly Attendance
+app.get("/api/FetchMonthlyAttendance", async (req, res) => {
+  await sql.connect(config);
+
+  try {
+    const result = await sql.query`EXEC Proc_FetchMonthlyAttendance`;
+    // console.log("result:- ", result.recordset);
+    res.json(result.recordset);
+  } catch (err) {
+    res.json({ message: "Error in Fetching Monthly Attendance" });
   }
 });
 
