@@ -138,7 +138,7 @@ app.get("/api/companydetails", async (req, res) => {
     res.json(result.recordset);
     // console.log("result:- ", result.recordsets);
   } catch (err) {
-    res.send("Error while fetching employee master details", err.message);
+    res.send("Error while fetching company master details", err.message);
   }
 });
 
@@ -282,54 +282,30 @@ app.get("/api/designationdetails", async (req, res) => {
 app.post("/api/add-salary-structure", async (req, res) => {
   await sql.connect(config);
 
-  const {
-    Employee_ID,
-    Basic,
-    HRA,
-    Special_Allowance,
-    Bonus,
-    Effective_From,
-    MonthlyCTC,
-  } = req.body;
   const Created_By = 1;
   const Created_Time = new Date();
 
   console.log("req.body:- ", req.body);
+  // console.log("req.body.length:- ", req.body.length);
+
+  // Created This function to achieve repetative Structure_ID
+  const RepatativeStructure_ID =
+    await sql.query`SELECT ISNULL(MAX(Structure_ID),0)+1 as NewID from SALARYSTRUCTURE`;
+  const Structure_ID = RepatativeStructure_ID.recordset[0].NewID;
+  console.log("Structure_ID:- ", RepatativeStructure_ID.recordset[0].NewID);
 
   try {
-    const result =
-      await sql.query`INSERT INTO SALARYSTRUCTURE (Employee_ID,Basic,HRA,Special_Allowance,Bonus,Effective_From,Created_By,Created_Time)
-    values (${Employee_ID},${Basic},${HRA},${Special_Allowance},${Bonus},${Effective_From},${Created_By},${Created_Time})`;
-    res.send({ message: "Salary Structure Created Successfully" });
+    for (let i = 0; i < req.body.length; i++) {
+      const { Employee_ID, Effective_From, Payhead_ID, Amount } = req.body[i];
+      // console.log("Inserting Row Data:- ", req.body[i]);
+      const result = await sql.query`EXEC AddSalaryStructure ${Structure_ID},
+    ${Employee_ID},${Effective_From},${Payhead_ID},${Amount},${Created_By},${Created_Time}`;
+    }
+    console.log("Salary Structure inserted successfully");
+    res.send({ message: "Salary Structure inserted successfully" });
   } catch (err) {
-    res.send({ message: "Error in Salary Structure creation", err });
-  }
-});
-
-// Add Manual Salary Structure
-app.post("/api/add-manual-salary-structure", async (req, res) => {
-  await sql.connect(config);
-
-  const {
-    Employee_ID,
-    Basic,
-    HRA,
-    Special_Allowance,
-    Bonus,
-    Effective_From,
-    MonthlyCTC,
-  } = req.body;
-  const Created_By = 1;
-  const Created_Time = new Date();
-
-  console.log("req.body:- ", req.body);
-
-  try {
-    const result =
-      await sql.query`EXEC Proc_CTC_Calculate ${Employee_ID}, ${MonthlyCTC}, ${Effective_From}`;
-    res.send({ message: "Salary Structure Created Successfully" });
-  } catch (err) {
-    res.send({ message: "Error in Salary Structure creation", err });
+    // console.log("Error in inserting salary structure");
+    res.send({ message: "Error in inserting salary structure", err });
   }
 });
 
@@ -338,7 +314,9 @@ app.get("/api/salary-structure-details", async (req, res) => {
   await sql.connect(config);
 
   try {
-    const result = await sql.query`Proc_SalaryStructureDetails`;
+    // const result = await sql.query`Proc_SalaryStructureDetails`;
+
+    const result = await sql.query`EXEC Proc_SalaryStructureDetails`;
     // console.log(result.recordset);
     res.json(result.recordset);
   } catch (err) {
@@ -391,12 +369,14 @@ app.post("/api/addpayheads", async (req, res) => {
   }
 });
 
-// Payhead Details Fetch
+// Payhead Details will Fetch on the screen of created payheads
 app.get("/api/payheaddetails", async (req, res) => {
   await sql.connect(config);
 
   try {
-    const result = await sql.query`select * from Payheads`;
+    const result =
+      await sql.query`select * from Payheads order by payhead_id asc
+`;
     // console.log(result);
     res.json(result.recordset);
   } catch (err) {
@@ -491,16 +471,48 @@ app.get("/api/grade-company", async (req, res) => {
   }
 });
 
-app.post("/api/Exec-Procedure", async (req, res) => {
-  await sql.connect(config);
-  // console.log(req.body);
-  const { MonthlyCTC } = req.body;
+// Add Monthly Attendance
+app.post("/api/add-month-attendance", async (req, res) => {
+  const {
+    Employee_ID,
+    Month,
+    Year,
+    Tot_Days,
+    Weekly_Off,
+    Paid_Holiday,
+    Absent_Days,
+    Days_Paid,
+    Present,
+  } = req.body;
+  const Created_By = 1;
+  const Created_Time = new Date();
+  await sql.query(config);
+
+  // console.log("req.body:- ", req.body);
+
   try {
-    const result = await sql.query`EXEC [CURSOR] ${MonthlyCTC}`;
-    // console.log("result.recordset:- ", result.recordset);
-    res.json(result.recordset);
+    const result = await sql.query`EXEC Proc_AddMonthlyAttendance
+  ${Employee_ID},
+  ${Month},
+  ${Year},
+  ${Tot_Days},
+  ${Weekly_Off},
+  ${Paid_Holiday},
+  ${Absent_Days},
+  ${Days_Paid},
+  ${Present},
+  ${Created_By},
+  ${Created_Time}`;
+    res.json({
+      message: "MonthlyAttendance Added Successfully",
+      statusText: "OK",
+    });
   } catch (err) {
-    res.json("Error in executing employeedetails procedure");
+    console.log("Error in backend:- ", err);
+    res.json({
+      message: err.message || "Error in adding MonthlyAttendance",
+      statusText: "!OK",
+    });
   }
 });
 
@@ -513,7 +525,35 @@ app.get("/api/FetchMonthlyAttendance", async (req, res) => {
     // console.log("result:- ", result.recordset);
     res.json(result.recordset);
   } catch (err) {
+    // console.log("Error :-", err);
     res.json({ message: "Error in Fetching Monthly Attendance" });
+  }
+});
+
+// During Salary Structure define payheads will fetch so that user can define the salary structure as per their requirements
+app.get("/api/FetchPayheadsforSalaStructure", async (req, res) => {
+  await sql.connect(config);
+
+  try {
+    const result = await sql.query`EXEC FetchPayheadsforSalaStructure`;
+    // console.log("/api/FetchPayheadsforSalaStructure:- ", result.recordset);
+    res.json(result.recordset);
+  } catch (err) {
+    res.json("Error while fetching payheads");
+  }
+});
+
+// Fetch Months
+// This Will fetch All the Months with Year in order to add Manual Attendance, Arrear, Variable Pay etc.
+app.get("/api/FetchMonths", async (req, res) => {
+  await sql.connect(config);
+
+  try {
+    const result = await sql.query`EXEC Proc_FetchMonths`;
+    // console.log(result.recordset);
+    res.json(result.recordset);
+  } catch (err) {
+    res.json("Error in fetching months");
   }
 });
 
