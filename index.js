@@ -258,38 +258,38 @@ app.post("/api/addwithdrawal", async (req, res) => {
   await sql.connect(config);
 
   try {
-    // const result = await sql.query`
-
-    // EXEC Proc_AddWithdrawal
-    // ${Employee_ID}, ${Resignation_Date}, ${Last_Working_Date},
-    // ${Notice_Period_Days}, ${Withdrawal_Type_Name},
-    // ${ProcessType}, ${Reason}, ${Remark}, ${Created_By}, ${Created_Time}
-    // `;
-
     const result = await sql.query`
-    IF EXISTS (SELECT 1 FROM ADDWITHDRAWAL WHERE Employee_ID =  ${Employee_ID})
-    BEGIN
-    THROW 50001,'Cannot insert duplicate entry',1
-    END
-    ELSE 
-    BEGIN
-    
-    INSERT INTO AddWithdrawal 
-(Employee_ID,Resignation_Date,Last_Working_Date,Notice_Period_Days,Withdrawal_Type_Name,ProcessType,Reason,Remark,Created_By,Created_Time)
-VALUES
-(${Employee_ID},
-${Resignation_Date},
-${Last_Working_Date},
-${Notice_Period_Days},
-${Withdrawal_Type_Name},
-${ProcessType},
-${Reason},
-${Remark},
-${Created_By},
-${Created_Time})
-END
 
-`;
+    EXEC Proc_AddWithdrawal
+    ${Employee_ID}, ${Resignation_Date}, ${Last_Working_Date},
+    ${Notice_Period_Days}, ${Withdrawal_Type_Name},
+    ${ProcessType}, ${Reason}, ${Remark}, ${Created_By}, ${Created_Time}
+    `;
+
+    //     const result = await sql.query`
+    //     IF EXISTS (SELECT 1 FROM ADDWITHDRAWAL WHERE Employee_ID =  ${Employee_ID})
+    //     BEGIN
+    //     THROW 50001,'Cannot insert duplicate entry',1
+    //     END
+    //     ELSE
+    //     BEGIN
+
+    //     INSERT INTO AddWithdrawal
+    // (Employee_ID,Resignation_Date,Last_Working_Date,Notice_Period_Days,Withdrawal_Type_Name,ProcessType,Reason,Remark,Created_By,Created_Time)
+    // VALUES
+    // (${Employee_ID},
+    // ${Resignation_Date},
+    // ${Last_Working_Date},
+    // ${Notice_Period_Days},
+    // ${Withdrawal_Type_Name},
+    // ${ProcessType},
+    // ${Reason},
+    // ${Remark},
+    // ${Created_By},
+    // ${Created_Time})
+    // END
+
+    // `;
     return res.json({
       message: "Withdrawal added successfully",
       statusText: "OK",
@@ -300,6 +300,17 @@ END
       message: err.message || "Error in adding Withdrawal Entry",
       statusText: "!OK",
     });
+  }
+});
+
+app.get("/api/withdrawaldetails", async (req, res) => {
+  await sql.connect(config);
+  try {
+    const result = await sql.query`SELECT * FROM WITHDRAWALDETAILS_VIEW`;
+    console.log("Withdrawal Details :- ", result.recordset);
+    res.json(result.recordset);
+  } catch (err) {
+    res.send({ message: "Error in fetching Withdrawal Details" });
   }
 });
 
