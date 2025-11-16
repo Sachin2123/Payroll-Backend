@@ -77,7 +77,7 @@ app.post("/api/addemployee", async (req, res) => {
 
     res.json({ message: "Success" });
   } catch (err) {
-    console.error(err.message);
+    console.error(err.message, getdate());
     res.json({ message: "Error in inserting data" });
   }
 });
@@ -523,7 +523,9 @@ app.get("/api/salary-structure-details", async (req, res) => {
   try {
     // const result = await sql.query`Proc_SalaryStructureDetails`;
 
-    const result = await sql.query`EXEC Proc_SalaryStructureDetails`;
+    const result = await sql.query`EXEC 
+    Proc_SalaryStructureDetails
+    `;
     // console.log(result.recordset);
     res.json(result.recordset);
   } catch (err) {
@@ -764,16 +766,61 @@ app.get("/api/FetchMonths", async (req, res) => {
   }
 });
 
-// Fetch only Defined Salary Structure Employees
+// Fetch only those employees whose Salary Structure is defined
 app.get("/api/Defined-SalaryStructure-Employee", async (req, res) => {
   await sql.connect(config);
 
   try {
-    const result = await sql.query`EXEC SalaryStructureEmployee`;
+    const result = await sql.query`EXEC Proc_SalaryStructureEmployee`;
     // console.log(result.recordset);
     res.json(result.recordset);
   } catch (err) {
     json.send({ message: "Error in fetching Employees" });
+  }
+});
+
+app.post("/api/add-variable-master", async (req, res) => {
+  const { Employee_ID, Month, Payhead_ID, Amount, Remark } = req.body;
+  const { Month: MonthNumber, Year } = JSON.parse(Month);
+  // console.log(req.body);
+  const Created_By = 1;
+  // const Created_Time = new Date();
+  const Created_Time = "2025-11-16 22:07:38.710";
+
+  try {
+    const result = await sql.query`EXEC Proc_AddVariableMaster
+${Employee_ID},
+${MonthNumber},
+${Year},
+${Payhead_ID},
+${Amount},
+${Remark},
+${Created_By},
+${Created_Time}`;
+
+    res.send({
+      message: "Variable Master added successfully",
+      statusText: "OK",
+    });
+  } catch (err) {
+    console.log(err);
+    res.json({
+      message: err.message || "Error in aading Variable Master",
+      statusText: "!OK",
+    });
+  }
+});
+
+app.get("/api/FetchVariableMasterDetails", async (req, res) => {
+  await sql.connect(config);
+
+  try {
+    const result =
+      await sql.query`SELECT * FROM View_VariableMaster ORDER BY MONTH`;
+    console.log(result);
+    return res.json(result.recordset);
+  } catch (err) {
+    res.json("Error in fetching Variable Master Details");
   }
 });
 
@@ -785,12 +832,13 @@ app.post("/api/process-Salary", async (req, res) => {
   const Created_By = 1;
   const Created_Time = new Date();
 
-  // console.log("req.body:- ", req.body);
-
   try {
-    const result =
-      await sql.query`EXEC Proc_MonthlySalaryCalculate ${Employee_ID}, ${monthNumber}, ${Year}`;
-    console.log("Salary Processed Data:- ", result.recordset);
+    for (const id of Employee_ID) {
+      // console.log("id:- ", id);
+      const result =
+        await sql.query`EXEC Proc_BulkSalaryProcess ${id}, ${monthNumber}, ${Year}`;
+      console.log("Salary Processed Data:- ", result.recordset);
+    }
     res.send({ message: "Salary Processed Successfully!", statusText: "OK" });
   } catch (err) {
     console.log("Salary Process Eror:- ", err);
