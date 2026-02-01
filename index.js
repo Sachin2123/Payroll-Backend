@@ -15,7 +15,8 @@ const config = {
   user: "sa",
   password: "Sachin@123",
   server: "localhost",
-  database: "payroll",
+  database: "Payroll",
+  port: 1433,
   options: {
     trustServerCertificate: true,
   },
@@ -26,7 +27,7 @@ app.get("/", async (req, res) => {
     await sql.connect(config);
     res.send("✅ Connected to SQL Server successfully");
   } catch (err) {
-    // console.error("❌ SQL Connection Error:", err);
+    console.error("❌ SQL Connection Error:", err);
     res.status(500).send("❌ Connection failed: " + err.message);
   }
 });
@@ -306,7 +307,7 @@ app.post("/api/addwithdrawal", async (req, res) => {
 app.get("/api/withdrawaldetails", async (req, res) => {
   await sql.connect(config);
   try {
-    const result = await sql.query`SELECT * FROM WITHDRAWALDETAILS_VIEW`;
+    const result = await sql.query`SELECT * FROM WithdrawalDetails_View`;
     console.log("Withdrawal Details :- ", result.recordset);
     res.json(result.recordset);
   } catch (err) {
@@ -390,7 +391,7 @@ app.post("/api/adddepartment", async (req, res) => {
   const Created_By = 1;
   const Created_Time = new Date();
 
-  if (Department_Name.trim() === "" || !Department_Name) {
+  if (Department_Name.trim() == "" || !Department_Name) {
     res.json("Department is required");
   } else {
     try {
@@ -457,7 +458,7 @@ app.post("/api/adddesignation", async (req, res) => {
   await sql.connect(config);
 
   const { Designation_Name } = req.body;
-  // console.log("Designation_Name:- ", Designation_Name);
+  console.log("Designation_Name:- ", Designation_Name);
   const Created_By = 1;
   const Created_Time = new Date();
 
@@ -583,9 +584,7 @@ app.get("/api/payheaddetails", async (req, res) => {
   await sql.connect(config);
 
   try {
-    const result =
-      await sql.query`select * from Payheads order by payhead_id asc
-`;
+    const result = await sql.query`select * from PayheadDetails_View`;
     // console.log(result);
     res.json(result.recordset);
   } catch (err) {
@@ -628,21 +627,16 @@ app.put("/api/edit-payheaddetails/:Payhead_ID", async (req, res) => {
     IS_Formula_Type,
     IS_Attendance,
   } = req.body;
-  // console.log(req.body);
   const { Payhead_ID } = req.params;
   const Created_By = 1;
   const Created_Time = new Date();
-  // console.log("edit-payheaddetails:- ", Payhead_ID);
+
+  console.log(req.body);
+  console.log("edit-payheaddetails:- ", Payhead_ID);
   await sql.connect(config);
 
   try {
-    // const result =
-    //   await sql.query`UPDATE PAYHEADS SET Payhead_Name = ${Payhead_Name}, Payhead_Type = ${Payhead_Type}, Payhead_Formula = ${Payhead_Formula},
-    // Company_ID = ${Company_ID}, Grade_ID = ${Grade_ID}, IS_PF = ${IS_PF}, IS_ESIC = ${IS_ESIC}, IS_PT = ${IS_PT}, IS_Attendance = ${IS_Attendance},
-    // IS_Formula_Type = ${IS_Formula_Type},
-    // Created_By = ${Created_By}, Created_Time = ${Created_Time} where Payhead_ID = ${Payhead_ID}`;
-
-    const result = await sql.query`EXEC Proc_EditPayhead 
+    const result = await sql.query`EXEC Proc_EditPayhead
     ${Payhead_Code},
     ${Payhead_Name},
     ${Payhead_Type},
@@ -816,7 +810,7 @@ app.get("/api/FetchVariableMasterDetails", async (req, res) => {
 
   try {
     const result =
-      await sql.query`SELECT * FROM View_VariableMaster ORDER BY MONTH`;
+      await sql.query`SELECT * FROM VariableMaster_View ORDER BY MONTH`;
     console.log(result);
     return res.json(result.recordset);
   } catch (err) {

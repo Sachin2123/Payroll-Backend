@@ -1,8 +1,11 @@
-const config = {
+const conn = {
   user: "sa",
   password: "Sachin@123",
   server: "localhost",
-  database: "Payrol",
+  database: "payroll",
+  options: {
+    trustServerCertificate: true,
+  },
 };
 
-module.exports = config;
+module.exports = conn;
